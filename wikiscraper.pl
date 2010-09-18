@@ -18,17 +18,26 @@ while (defined (my $page = $dumpfile->next))
 	open (FILE, ">", $page->title);
 	print FILE $_->text;
 	close FILE;
+
+	my $user = $_->contributor->id;
+	if (!defined $user) {
+	    $user = $_->contributor->ip;
+	    $user =~ s/\./_/g;
+	    $user = "ip_" . $user;
+	} else {
+	    $user = "id_" . $user;
+	}
 	my @command = ("ci",
 		       "-t-" . $page->title,
 		       "-d" . $_->timestamp,
 		       ($_->comment ne "" ? "-m" . $_->comment : "-mNo message"),
 		       "-r" . $_->id,
-		       "-w" . $_->contributor->astext,
+		       "-w" . $user,
 		       "-l",
 		       $page->title,
 	    );
 
-	system(@command);
 	print join " ", @command, "\n";
+	system(@command);
     }
 }
