@@ -5,32 +5,30 @@
 use warnings;
 use strict;
 
-require MediaWiki::API;
+require MediaWiki::DumpFile::Pages;
 
-my $api_url = shift @ARGV;
-# http://wikiti.brandonw.net/api.php
-
-my $page = shift @ARGV;
+my $dumpfile = MediaWiki::DumpFile::Pages->new(shift @ARGV);
 # 83Plus:Ports:57
 
-my $name = shift @ARGV;
-my $password = shift @ARGV;
+while (defined (my $page = $dumpfile->next))
+{
+    my @revs = $page->revision;
 
-my $mw = MediaWiki::API->new( { api_url => $api_url } );
-print $api_url, "\n";
-#$mw->login( { lgname => $name,
-#	      lgpassword => $password } )
-#    || die $mw->{error}->{code} . ': ' . $mw->{error}->{details};
+    foreach (@revs) {
+	open (FILE, ">", $page->title);
+	print FILE $_->text;
+	close FILE;
+	my @command = ("ci",
+		       "-t-" . $page->title,
+		       "-d" . $_->timestamp,
+		       ($_->comment ne "" ? "-m" . $_->comment : "-mNo message"),
+		       "-r" . $_->id,
+		       "-w" . $_->contributor->astext,
+		       "-l",
+		       $page->title,
+	    );
 
-my $revs = $mw->api( 
-    { action => 'query',
-      prop => 'categorymembers',
-      cmtitle => 'Category:68k',
-      cmlimit => 'max',
-    } );
-
-print join('**', %$revs->{'warnings'}), "\n";
-
-foreach (@{$revs}) {
-    print "$_->{title}\n";
+	system(@command);
+	print join " ", @command, "\n";
+    }
 }
