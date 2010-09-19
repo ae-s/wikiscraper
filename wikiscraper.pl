@@ -15,6 +15,8 @@ while (defined (my $page = $dumpfile->next))
     my @revs = $page->revision;
 
     foreach (@revs) {
+	system("co", "-l", $page->title);
+
 	open (FILE, ">", $page->title);
 	print FILE $_->text;
 	close FILE;
@@ -33,7 +35,6 @@ while (defined (my $page = $dumpfile->next))
 		       ($_->comment ne "" ? "-m" . $_->comment : "-mNo message"),
 		       "-r" . $_->id,
 		       "-w" . $user,
-		       "-l",
 		       $page->title,
 	    );
 
